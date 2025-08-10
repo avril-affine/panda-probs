@@ -32,7 +32,8 @@ fn run() !void {
     );
     defer strategy.deinit();
 
-    const frequencies = measure_time("Compute strategy:", strategies.compute, .{strategy});
+    // const frequencies = measure_time("Compute strategy:", strategies.compute, .{strategy});
+    const frequencies = measure_time("Compute strategy:", strategies.compute_weighted_rank, .{strategy});
     const total: u64 = blk: {
         var x: u64 = 0;
         for (frequencies) |f| { x += @intCast(f); }

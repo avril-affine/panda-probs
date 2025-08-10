@@ -95,6 +95,8 @@ pub const StandardDeck = struct {
         return .{.cards = cards};
     }
 
+    /// computes a unique index for an array of card indices.
+    /// this uses a bit mask to "sort" the array.
     pub fn hand_to_index(hand: []const u8) u64 {
         var bit_mask: u64 = 0;
         for (hand) |card| {

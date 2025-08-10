@@ -92,6 +92,7 @@ pub fn OptimalStrategy(
         pub const num_payouts = P;
         const Self = @This();
         const draw_size = Deck.N - 5;
+        // normalize the output of `draw_frequency` so that it counts as 47c5
         const DRAW_WEIGHT: [6]i64 = .{
             combinations.choose(draw_size, 5) * 5 / combinations.choose(draw_size, 0),
             combinations.choose(draw_size, 5) * 5 / combinations.choose(draw_size, 1),
