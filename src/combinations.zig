@@ -1,49 +1,42 @@
 const std = @import("std");
 
-fn CombinationIndices(k: comptime_int, d: comptime_int) type {
-    return struct {
-        hold: [k]usize,
-        disc: [d]usize,
-    };
-}
-
-pub const indices_5c4: [5]CombinationIndices(4, 1) = .{
-    .{ .hold = .{0, 1, 2, 3}, .disc = .{4} },
-    .{ .hold = .{0, 1, 2, 4}, .disc = .{3} },
-    .{ .hold = .{0, 1, 3, 4}, .disc = .{2} },
-    .{ .hold = .{0, 2, 3, 4}, .disc = .{1} },
-    .{ .hold = .{1, 2, 3, 4}, .disc = .{0} },
+pub const indices_5c4 = .{
+    .{ [_]usize{0, 1, 2, 3}, [_]usize{4} },
+    .{ [_]usize{0, 1, 2, 4}, [_]usize{3} },
+    .{ [_]usize{0, 1, 3, 4}, [_]usize{2} },
+    .{ [_]usize{0, 2, 3, 4}, [_]usize{1} },
+    .{ [_]usize{1, 2, 3, 4}, [_]usize{0} },
 };
-pub const indices_5c3: [10]CombinationIndices(3, 2) = .{
-    .{ .hold = .{0, 1, 2}, .disc = .{3, 4} },
-    .{ .hold = .{0, 1, 3}, .disc = .{2, 4} },
-    .{ .hold = .{0, 1, 4}, .disc = .{2, 3} },
-    .{ .hold = .{0, 2, 3}, .disc = .{1, 4} },
-    .{ .hold = .{0, 2, 4}, .disc = .{1, 3} },
-    .{ .hold = .{0, 3, 4}, .disc = .{1, 2} },
-    .{ .hold = .{1, 2, 3}, .disc = .{0, 4} },
-    .{ .hold = .{1, 2, 4}, .disc = .{0, 3} },
-    .{ .hold = .{1, 3, 4}, .disc = .{0, 2} },
-    .{ .hold = .{2, 3, 4}, .disc = .{0, 1} },
+pub const indices_5c3 = .{
+    .{ [_]usize{0, 1, 2}, [_]usize{3, 4} },
+    .{ [_]usize{0, 1, 3}, [_]usize{2, 4} },
+    .{ [_]usize{0, 1, 4}, [_]usize{2, 3} },
+    .{ [_]usize{0, 2, 3}, [_]usize{1, 4} },
+    .{ [_]usize{0, 2, 4}, [_]usize{1, 3} },
+    .{ [_]usize{0, 3, 4}, [_]usize{1, 2} },
+    .{ [_]usize{1, 2, 3}, [_]usize{0, 4} },
+    .{ [_]usize{1, 2, 4}, [_]usize{0, 3} },
+    .{ [_]usize{1, 3, 4}, [_]usize{0, 2} },
+    .{ [_]usize{2, 3, 4}, [_]usize{0, 1} },
 };
-pub const indices_5c2: [10]CombinationIndices(2, 3) = .{
-    .{ .hold = .{0, 1}, .disc = .{2, 3, 4} },
-    .{ .hold = .{0, 2}, .disc = .{1, 3, 4} },
-    .{ .hold = .{0, 3}, .disc = .{1, 2, 4} },
-    .{ .hold = .{0, 4}, .disc = .{1, 2, 3} },
-    .{ .hold = .{1, 2}, .disc = .{0, 3, 4} },
-    .{ .hold = .{1, 3}, .disc = .{0, 2, 4} },
-    .{ .hold = .{1, 4}, .disc = .{0, 2, 3} },
-    .{ .hold = .{2, 3}, .disc = .{0, 1, 4} },
-    .{ .hold = .{2, 4}, .disc = .{0, 1, 3} },
-    .{ .hold = .{3, 4}, .disc = .{0, 1, 2} },
+pub const indices_5c2 = .{
+    .{ [_]usize{0, 1}, [_]usize{2, 3, 4} },
+    .{ [_]usize{0, 2}, [_]usize{1, 3, 4} },
+    .{ [_]usize{0, 3}, [_]usize{1, 2, 4} },
+    .{ [_]usize{0, 4}, [_]usize{1, 2, 3} },
+    .{ [_]usize{1, 2}, [_]usize{0, 3, 4} },
+    .{ [_]usize{1, 3}, [_]usize{0, 2, 4} },
+    .{ [_]usize{1, 4}, [_]usize{0, 2, 3} },
+    .{ [_]usize{2, 3}, [_]usize{0, 1, 4} },
+    .{ [_]usize{2, 4}, [_]usize{0, 1, 3} },
+    .{ [_]usize{3, 4}, [_]usize{0, 1, 2} },
 };
-pub const indices_5c1: [5]CombinationIndices(1, 4) = .{
-    .{ .hold = .{0}, .disc = .{1, 2, 3, 4} },
-    .{ .hold = .{1}, .disc = .{0, 2, 3, 4} },
-    .{ .hold = .{2}, .disc = .{0, 1, 3, 4} },
-    .{ .hold = .{3}, .disc = .{0, 1, 2, 4} },
-    .{ .hold = .{4}, .disc = .{0, 1, 2, 3} },
+pub const indices_5c1 = .{
+    .{ [_]usize{0}, [_]usize{1, 2, 3, 4} },
+    .{ [_]usize{1}, [_]usize{0, 2, 3, 4} },
+    .{ [_]usize{2}, [_]usize{0, 1, 3, 4} },
+    .{ [_]usize{3}, [_]usize{0, 1, 2, 4} },
+    .{ [_]usize{4}, [_]usize{0, 1, 2, 3} },
 };
 
 const N = 53;

@@ -180,10 +180,11 @@ pub fn OptimalStrategy(
             var best_num_hold: u64 = 5;
 
             // hold 4
-            for (combinations.indices_5c4) |indices| {
+            inline for (combinations.indices_5c4) |indices| {
+                const indices_hold, _ = indices;
                 var frequencies = PayoutFrequency.init();
 
-                const hand_idx = Self.get_hand_idx(hand, indices.hold);
+                const hand_idx = Self.get_hand_idx(hand, indices_hold);
                 frequencies.add(&self.hold4[hand_idx]);
                 frequencies.dec(payout_idx);
 
@@ -196,15 +197,16 @@ pub fn OptimalStrategy(
             }
 
             // hold 3
-            for (combinations.indices_5c3) |indices| {
+            inline for (combinations.indices_5c3) |indices| {
+                const indices_hold, const indices_disc = indices;
                 var frequencies = PayoutFrequency.init();
 
-                const hand_hold3_idx = Self.get_hand_idx(hand, indices.hold);
+                const hand_hold3_idx = Self.get_hand_idx(hand, indices_hold);
                 frequencies.add(&self.hold3[hand_hold3_idx]);
 
-                var indices_disc1_iter = IndexIterator1.init(&indices.disc);
+                var indices_disc1_iter = IndexIterator1.init(&indices_disc);
                 while (indices_disc1_iter.next()) |indices_disc1| {
-                    const hand_hold4_idx = Self.get_hand_idx(hand, indices.hold ++ indices_disc1);
+                    const hand_hold4_idx = Self.get_hand_idx(hand, indices_hold ++ indices_disc1);
                     frequencies.sub(&self.hold4[hand_hold4_idx]);
                 }
                 frequencies.inc(payout_idx);
@@ -218,20 +220,21 @@ pub fn OptimalStrategy(
             }
 
             // hold 2
-            for (combinations.indices_5c2) |indices| {
+            inline for (combinations.indices_5c2) |indices| {
+                const indices_hold, const indices_disc = indices;
                 var frequencies = PayoutFrequency.init();
 
-                const hand_hold2_idx = Self.get_hand_idx(hand, indices.hold);
+                const hand_hold2_idx = Self.get_hand_idx(hand, indices_hold);
                 frequencies.add(&self.hold2[hand_hold2_idx]);
 
-                var indices_disc1_iter = IndexIterator1.init(&indices.disc);
+                var indices_disc1_iter = IndexIterator1.init(&indices_disc);
                 while (indices_disc1_iter.next()) |indices_disc1| {
-                    const hand_hold3_idx = Self.get_hand_idx(hand, indices.hold ++ indices_disc1);
+                    const hand_hold3_idx = Self.get_hand_idx(hand, indices_hold ++ indices_disc1);
                     frequencies.sub(&self.hold3[hand_hold3_idx]);
                 }
-                var indices_disc2_iter = IndexIterator2.init(&indices.disc);
+                var indices_disc2_iter = IndexIterator2.init(&indices_disc);
                 while (indices_disc2_iter.next()) |indices_disc2| {
-                    const hand_hold4_idx = Self.get_hand_idx(hand, indices.hold ++ indices_disc2);
+                    const hand_hold4_idx = Self.get_hand_idx(hand, indices_hold ++ indices_disc2);
                     frequencies.add(&self.hold4[hand_hold4_idx]);
                 }
                 frequencies.dec(payout_idx);
@@ -245,25 +248,26 @@ pub fn OptimalStrategy(
             }
 
             // hold 1
-            for (combinations.indices_5c1) |indices| {
+            inline for (combinations.indices_5c1) |indices| {
+                const indices_hold, const indices_disc = indices;
                 var frequencies = PayoutFrequency.init();
 
-                const hand_hold1_idx = Self.get_hand_idx(hand, indices.hold);
+                const hand_hold1_idx = Self.get_hand_idx(hand, indices_hold);
                 frequencies.add(&self.hold1[hand_hold1_idx]);
 
-                var indices_disc1_iter = IndexIterator1.init(&indices.disc);
+                var indices_disc1_iter = IndexIterator1.init(&indices_disc);
                 while (indices_disc1_iter.next()) |indices_disc1| {
-                    const hand_hold2_idx = Self.get_hand_idx(hand, indices.hold ++ indices_disc1);
+                    const hand_hold2_idx = Self.get_hand_idx(hand, indices_hold ++ indices_disc1);
                     frequencies.sub(&self.hold2[hand_hold2_idx]);
                 }
-                var indices_disc2_iter = IndexIterator2.init(&indices.disc);
+                var indices_disc2_iter = IndexIterator2.init(&indices_disc);
                 while (indices_disc2_iter.next()) |indices_disc2| {
-                    const hand_hold3_idx = Self.get_hand_idx(hand, indices.hold ++ indices_disc2);
+                    const hand_hold3_idx = Self.get_hand_idx(hand, indices_hold ++ indices_disc2);
                     frequencies.add(&self.hold3[hand_hold3_idx]);
                 }
-                var indices_disc3_iter = IndexIterator3.init(&indices.disc);
+                var indices_disc3_iter = IndexIterator3.init(&indices_disc);
                 while (indices_disc3_iter.next()) |indices_disc3| {
-                    const hand_hold4_idx = Self.get_hand_idx(hand, indices.hold ++ indices_disc3);
+                    const hand_hold4_idx = Self.get_hand_idx(hand, indices_hold ++ indices_disc3);
                     frequencies.sub(&self.hold4[hand_hold4_idx]);
                 }
                 frequencies.inc(payout_idx);
