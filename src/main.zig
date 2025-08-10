@@ -3,11 +3,11 @@ const std = @import("std");
 const combinations = @import("combinations.zig");
 const strategies = @import("strategies.zig");
 const deuces_wild = @import("poker_types/deuces_wild.zig");
-const optimal_strategy = @import("strategies/optimal.zig");
 
 const DeucesWild = deuces_wild.DeucesWild;
 const DeucesWildFullPay = deuces_wild.DeucesWildFullPay;
-const OptimalStrategy = optimal_strategy.OptimalStrategy;
+const OptimalStrategy = @import("strategies/optimal.zig").OptimalStrategy;
+const OptimalStrategyVectorized = @import("strategies/optimal_vectorized.zig").OptimalStrategyVectorized;
 
 fn measure_time(msg: []const u8, f: anytype, args: anytype) @TypeOf(@call(.auto, f, args)) {
     var timer = std.time.Timer.start() catch @panic("timer not supported on system");
@@ -24,7 +24,8 @@ fn run() !void {
     try combinations.init(allocator);
     defer combinations.deinit();
 
-    const DeucesWildOptimalStrategy = OptimalStrategy(DeucesWild);
+    // const DeucesWildOptimalStrategy = OptimalStrategy(DeucesWild);
+    const DeucesWildOptimalStrategy = OptimalStrategyVectorized(DeucesWild);
     var strategy = try measure_time(
         "strategy init",
         DeucesWildOptimalStrategy.init,
@@ -39,6 +40,7 @@ fn run() !void {
         for (frequencies) |f| { x += @intCast(f); }
         break :blk x;
     };
+    const N = DeucesWildOptimalStrategy.Deck.N;
     const ev: f64 = blk: {
         var result: f64 = 0.0;
         const total_f64 = @as(f64, @floatFromInt(total));
@@ -51,6 +53,7 @@ fn run() !void {
             std.debug.print("{s:>16}: {d:>16}    {d:.6}\n", .{@tagName(rank), f, prob});
         }
         std.debug.print("{s:>16}: {d:>16}\n", .{"Total", total});
+        std.debug.assert(total == combinations.choose(N, 5) * combinations.choose(N-5, 5) * 5);
         break :blk result;
     };
     std.debug.print("\nEV: {d:.6}\n", .{ev});
