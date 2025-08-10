@@ -318,10 +318,7 @@ pub fn OptimalStrategy(
         }
 
         fn get_hand_idx(hand: [5]u8, indices: anytype) u64 {
-            var indices_sorted: [indices.len]usize = undefined;
-            std.mem.copyForwards(usize, &indices_sorted, &indices);
-            std.mem.sort(usize, &indices_sorted, {}, comptime std.sort.asc(usize));
-            return Deck.hand_to_index(&select(&hand, indices_sorted));
+            return Deck.hand_to_index(&select(&hand, indices));
         }
 
         fn get_ev(self: *const Self, frequencies: PayoutFrequency, num_hold: u64) u64 {

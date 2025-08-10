@@ -96,13 +96,25 @@ pub const StandardDeck = struct {
     }
 
     pub fn hand_to_index(hand: []const u8) u64 {
-        const len_u8: u8 = @intCast(hand.len);
-        var result = choose_lookup(StandardDeck.N, len_u8) - choose_lookup(StandardDeck.N-hand[0], len_u8);
-        for (1..hand.len) |i| {
-            const n_1 = StandardDeck.N - 1 - hand[i-1];
-            const n_2 = StandardDeck.N - hand[i];
-            const k = len_u8 - @as(u8, @intCast(i));
+        var bit_mask: u64 = 0;
+        for (hand) |card| {
+            bit_mask |= (@as(u64, 1) << @as(u6, @intCast(card)));
+        }
+
+        var k: u8 = @intCast(hand.len);
+        var prev_card = @ctz(bit_mask);
+        var result = choose_lookup(StandardDeck.N, k) - choose_lookup(StandardDeck.N-prev_card, k);
+        bit_mask &= bit_mask - 1;  // remove least significant bit
+        k -= 1;
+        while (bit_mask != 0) : ({
+            bit_mask &= bit_mask - 1;
+            k -= 1;
+        }) {
+            const card = @ctz(bit_mask);
+            const n_1 = StandardDeck.N - 1 - prev_card;
+            const n_2 = StandardDeck.N - card;
             result += choose_lookup(n_1, k) - choose_lookup(n_2, k);
+            prev_card = card;
         }
         return result;
     }
