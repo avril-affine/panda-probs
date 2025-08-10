@@ -1,0 +1,13 @@
+.{
+    .name = .panda_probs,
+    .version = "0.0.0",
+    .fingerprint = 0x5e31a833f51765a5,
+    .minimum_zig_version = "0.14.1",
+    .dependencies = .{
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
