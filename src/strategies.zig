@@ -14,12 +14,12 @@ pub fn compute(
     const StrategyType = @TypeOf(strategy);
     const PayoutFrequency = StrategyType.PayoutFrequency;
 
-    var indices: [StrategyType.Deck.N]u8 = undefined;
+    var indices: [StrategyType.Deck.N]u6 = undefined;
     for (0..StrategyType.Deck.N) |i| { indices[i] = @intCast(i); }
 
     var i: usize = 0;
     var total_frequency = PayoutFrequency.init();
-    var hand_indices_iter = CombinationIterator(u8, 5).init(&indices);
+    var hand_indices_iter = CombinationIterator(u6, 5).init(&indices);
     while (hand_indices_iter.next()) |hand_indices| {
         const frequency = strategy.draw_frequency(hand_indices);
         total_frequency.add(&frequency);

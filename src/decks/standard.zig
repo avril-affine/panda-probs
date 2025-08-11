@@ -10,9 +10,9 @@ pub const StandardDeck = struct {
     cards: [N]Card,
 
     pub const N = 52;
-    const indices: [N]u8 = blk: {
-        var result: [N]u8 = undefined;
-        for (0..N) |i| { result[i] = @as(u8, @intCast(i)); }
+    const indices: [N]u6 = blk: {
+        var result: [N]u6 = undefined;
+        for (0..N) |i| { result[i] = @as(u6, @intCast(i)); }
         break :blk result;
     };
 
@@ -20,7 +20,7 @@ pub const StandardDeck = struct {
         rank: Rank,
         suit: Suit,
 
-        pub const Rank = enum(u8) {
+        pub const Rank = enum(u4) {
             two,
             three,
             four,
@@ -54,7 +54,7 @@ pub const StandardDeck = struct {
             }
         };
 
-        pub const Suit = enum(u8) {
+        pub const Suit = enum(u2) {
             heart,
             diamond,
             club,
@@ -70,7 +70,7 @@ pub const StandardDeck = struct {
             }
         };
 
-        pub fn init(i: u8) Card {
+        pub fn init(i: u6) Card {
             assert(i < StandardDeck.N);
             return .{
                 .rank = @enumFromInt(i / 4),
@@ -78,8 +78,8 @@ pub const StandardDeck = struct {
             };
         }
 
-        pub fn index(self: Card) u8 {
-            return @intFromEnum(self.rank) * 4 + @intFromEnum(self.suit);
+        pub fn index(self: Card) u6 {
+            return @as(u6, @intCast(@intFromEnum(self.rank))) * 4 + @intFromEnum(self.suit);
         }
 
         pub fn format(self: *const Card, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
@@ -97,26 +97,26 @@ pub const StandardDeck = struct {
 
     /// computes a unique index for an array of card indices.
     /// this uses a bit mask to "sort" the array.
-    pub fn hand_to_index(hand: []const u8) u64 {
+    pub fn hand_to_index(hand: []const u6) u64 {
         var bit_mask: u64 = 0;
-        for (hand) |card| {
-            bit_mask |= (@as(u64, 1) << @as(u6, @intCast(card)));
+        for (hand) |card_idx| {
+            bit_mask |= @as(u64, 1) << card_idx;
         }
 
         var k: u8 = @intCast(hand.len);
-        var prev_card = @ctz(bit_mask);
-        var result = choose_lookup(StandardDeck.N, k) - choose_lookup(StandardDeck.N-prev_card, k);
+        var prev_card_idx = @ctz(bit_mask);
+        var result = choose_lookup(StandardDeck.N, k) - choose_lookup(StandardDeck.N-prev_card_idx, k);
         bit_mask &= bit_mask - 1;  // remove least significant bit
         k -= 1;
         while (bit_mask != 0) : ({
             bit_mask &= bit_mask - 1;
             k -= 1;
         }) {
-            const card = @ctz(bit_mask);
-            const n_1 = StandardDeck.N - 1 - prev_card;
-            const n_2 = StandardDeck.N - card;
+            const card_idx = @ctz(bit_mask);
+            const n_1 = StandardDeck.N - 1 - prev_card_idx;
+            const n_2 = StandardDeck.N - card_idx;
             result += choose_lookup(n_1, k) - choose_lookup(n_2, k);
-            prev_card = card;
+            prev_card_idx = card_idx;
         }
         return result;
     }

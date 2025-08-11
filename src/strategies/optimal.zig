@@ -63,7 +63,7 @@ fn PayoutFrequencyType(P: usize) type {
 }
 
 pub fn OptimalStrategy(
-    /// a u8 enum representing the different hand ranks
+    /// a uint enum representing the different hand ranks
     comptime HandRank: type,
 ) type {
 
@@ -116,32 +116,32 @@ pub fn OptimalStrategy(
             var hand_iter = deck.hand_iter();
             while (hand_iter.next()) |*hand| {
                 const score: usize = @intFromEnum(HandRank.from_hand(hand));
-                const hand_indices: [5]u8 = blk: {
-                    var result: [5]u8 = undefined;
+                const hand_indices: [5]u6 = blk: {
+                    var result: [5]u6 = undefined;
                     for (0..5) |i| { result[i] = hand[i].index(); }
                     break :blk result;
                 };
                 hand_to_rank_index[Deck.hand_to_index(&hand_indices)] = score;
                 // discard 1
-                var hand_hold4_iter = CombinationIterator(u8, 4).init(&hand_indices);
+                var hand_hold4_iter = CombinationIterator(u6, 4).init(&hand_indices);
                 while (hand_hold4_iter.next()) |hand_discard| {
                     const hand_discard_idx = Deck.hand_to_index(&hand_discard);
                     hold4[hand_discard_idx].inc(score);
                 }
                 // discard 2
-                var hand_hold3_iter = CombinationIterator(u8, 3).init(&hand_indices);
+                var hand_hold3_iter = CombinationIterator(u6, 3).init(&hand_indices);
                 while (hand_hold3_iter.next()) |hand_discard| {
                     const hand_discard_idx = Deck.hand_to_index(&hand_discard);
                     hold3[hand_discard_idx].inc(score);
                 }
                 // discard 3
-                var hand_hold2_iter = CombinationIterator(u8, 2).init(&hand_indices);
+                var hand_hold2_iter = CombinationIterator(u6, 2).init(&hand_indices);
                 while (hand_hold2_iter.next()) |hand_discard| {
                     const hand_discard_idx = Deck.hand_to_index(&hand_discard);
                     hold2[hand_discard_idx].inc(score);
                 }
                 // discard 4
-                var hand_hold1_iter = CombinationIterator(u8, 1).init(&hand_indices);
+                var hand_hold1_iter = CombinationIterator(u6, 1).init(&hand_indices);
                 while (hand_hold1_iter.next()) |hand_discard| {
                     const hand_discard_idx = Deck.hand_to_index(&hand_discard);
                     hold1[hand_discard_idx].inc(score);
@@ -171,7 +171,7 @@ pub fn OptimalStrategy(
             self.allocator.destroy(self.hold0);
         }
 
-        pub fn draw_frequency(self: *const Self, hand: [5]u8) PayoutFrequency {
+        pub fn draw_frequency(self: *const Self, hand: [5]u6) PayoutFrequency {
             // hold 5
             const payout_idx = self.hand_to_rank_index[Deck.hand_to_index(&hand)];
             var best_frequencies = PayoutFrequency.init();
@@ -322,7 +322,7 @@ pub fn OptimalStrategy(
             return best_frequencies;
         }
 
-        fn get_hand_idx(hand: [5]u8, indices: anytype) u64 {
+        fn get_hand_idx(hand: [5]u6, indices: anytype) u64 {
             return Deck.hand_to_index(&select(&hand, indices));
         }
 
@@ -471,7 +471,7 @@ test "OptimalStrategy DeucesWild" {
         .{ .rank = .king, .suit = .heart },
         .{ .rank = .ace, .suit = .heart },
     };
-    var hand_royal_flush_indices: [5]u8 = undefined;
+    var hand_royal_flush_indices: [5]u6 = undefined;
     for (0.., hand_royal_flush) |i, card| { hand_royal_flush_indices[i] = card.index(); }
     try std.testing.expectEqualDeep(
         [_]i64{
@@ -497,7 +497,7 @@ test "OptimalStrategy DeucesWild" {
         .{ .rank = .queen, .suit = .heart },
         .{ .rank = .king, .suit = .heart },
     };
-    var hand_four_to_royal_indices: [5]u8 = undefined;
+    var hand_four_to_royal_indices: [5]u6 = undefined;
     for (0.., hand_four_to_royal) |i, card| { hand_four_to_royal_indices[i] = card.index(); }
     try std.testing.expectEqualDeep(
         [_]i64{
@@ -523,7 +523,7 @@ test "OptimalStrategy DeucesWild" {
         .{ .rank = .two, .suit = .spade },
         .{ .rank = .king, .suit = .heart },
     };
-    var hand_four_deuces_indices: [5]u8 = undefined;
+    var hand_four_deuces_indices: [5]u6 = undefined;
     for (0.., hand_four_deuces) |i, card| { hand_four_deuces_indices[i] = card.index(); }
     try std.testing.expectEqualDeep(
         [_]i64{
@@ -550,7 +550,7 @@ test "OptimalStrategy DeucesWild" {
         .{ .rank = .three, .suit = .spade },
         .{ .rank = .nine, .suit = .heart },
     };
-    var hand_three_deuces_indices: [5]u8 = undefined;
+    var hand_three_deuces_indices: [5]u6 = undefined;
     for (0.., hand_three_deuces) |i, card| { hand_three_deuces_indices[i] = card.index(); }
     try std.testing.expectEqualDeep(
         [_]i64{
