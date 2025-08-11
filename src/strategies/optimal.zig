@@ -322,6 +322,50 @@ pub fn OptimalStrategy(
             return best_frequencies;
         }
 
+        pub fn serialize(self: *const Self, writer: anytype) !void {
+            try writer.writeAll(std.mem.asBytes(self.hand_to_rank_index));
+            for (self.hold4) |payout_frequency| {
+                try writer.writeAll(std.mem.asBytes(&payout_frequency.data));
+            }
+            for (self.hold3) |payout_frequency| {
+                try writer.writeAll(std.mem.asBytes(&payout_frequency.data));
+            }
+            for (self.hold2) |payout_frequency| {
+                try writer.writeAll(std.mem.asBytes(&payout_frequency.data));
+            }
+            for (self.hold1) |payout_frequency| {
+                try writer.writeAll(std.mem.asBytes(&payout_frequency.data));
+            }
+            try writer.writeAll(std.mem.asBytes(&self.hold0.data));
+        }
+
+        pub fn deserialize(reader: anytype, allocator: std.mem.Allocator, paytable: [P]u64) !Self {
+            const hand_to_rank_index = try allocator.create([DEAL_CHOOSE_5]usize);
+            const hold4 = try PayoutFrequency.allocate_array(allocator, DEAL_CHOOSE_4);
+            const hold3 = try PayoutFrequency.allocate_array(allocator, DEAL_CHOOSE_3);
+            const hold2 = try PayoutFrequency.allocate_array(allocator, DEAL_CHOOSE_2);
+            const hold1 = try PayoutFrequency.allocate_array(allocator, DEAL_CHOOSE_1);
+            const hold0 = try allocator.create(PayoutFrequency);
+
+            try reader.readNoEof(std.mem.asBytes(hand_to_rank_index));
+            for (hold4) |*payout_frequency| { try reader.readNoEof(std.mem.asBytes(payout_frequency)); }
+            for (hold3) |*payout_frequency| { try reader.readNoEof(std.mem.asBytes(payout_frequency)); }
+            for (hold2) |*payout_frequency| { try reader.readNoEof(std.mem.asBytes(payout_frequency)); }
+            for (hold1) |*payout_frequency| { try reader.readNoEof(std.mem.asBytes(payout_frequency)); }
+            try reader.readNoEof(std.mem.asBytes(&hold0.data));
+
+            return .{
+                .hand_to_rank_index = hand_to_rank_index,
+                .hold4 = hold4,
+                .hold3 = hold3,
+                .hold2 = hold2,
+                .hold1 = hold1,
+                .hold0 = hold0,
+                .paytable = paytable,
+                .allocator = allocator,
+            };
+        }
+
         fn get_hand_idx(hand: [5]u6, indices: anytype) u64 {
             return Deck.hand_to_index(&select(&hand, indices));
         }

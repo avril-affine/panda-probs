@@ -25,12 +25,26 @@ fn run() !void {
     defer combinations.deinit();
 
     // const DeucesWildOptimalStrategy = OptimalStrategy(DeucesWild);
+    // const path = ".cache/OptimalStrategy_DeucesWild.bin";
     const DeucesWildOptimalStrategy = OptimalStrategyVectorized(DeucesWild);
-    var strategy = try measure_time(
-        "strategy init",
-        DeucesWildOptimalStrategy.init,
-        .{allocator, DeucesWildFullPay},
-    );
+    const path = ".cache/OptimalStrategyVectorized_DeucesWild.bin";
+    var strategy = blk: {
+        const file_result = std.fs.cwd().openFile(path, .{ .mode = .read_only });
+        if (file_result) |file| {
+            defer file.close();
+            break :blk try measure_time(
+                "strategy deserialize",
+                DeucesWildOptimalStrategy.deserialize,
+                .{file.reader(), allocator, DeucesWildFullPay}
+            );
+        } else |_| {
+            break :blk try measure_time(
+                "strategy init",
+                DeucesWildOptimalStrategy.init,
+                .{allocator, DeucesWildFullPay},
+            );
+        }
+    };
     defer strategy.deinit();
 
     // const frequencies = measure_time("Compute strategy:", strategies.compute, .{strategy});
@@ -57,6 +71,10 @@ fn run() !void {
         break :blk result;
     };
     std.debug.print("\nEV: {d:.6}\n", .{ev});
+
+    const file = try std.fs.cwd().createFile(path, .{});
+    defer file.close();
+    try strategy.serialize(file.writer());
 }
 
 pub fn main() !void {
