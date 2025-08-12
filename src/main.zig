@@ -6,8 +6,8 @@ const deuces_wild = @import("poker_types/deuces_wild.zig");
 
 const DeucesWild = deuces_wild.DeucesWild;
 const DeucesWildFullPay = deuces_wild.DeucesWildFullPay;
+const DealFrequency = @import("frequency/deal.zig").DealFrequency;
 const OptimalStrategy = @import("strategies/optimal.zig").OptimalStrategy;
-const OptimalStrategyVectorized = @import("strategies/optimal_vectorized.zig").OptimalStrategyVectorized;
 
 fn measure_time(msg: []const u8, f: anytype, args: anytype) @TypeOf(@call(.auto, f, args)) {
     var timer = std.time.Timer.start() catch @panic("timer not supported on system");
@@ -24,28 +24,27 @@ fn run() !void {
     try combinations.init(allocator);
     defer combinations.deinit();
 
-    // const DeucesWildOptimalStrategy = OptimalStrategy(DeucesWild);
-    // const path = ".cache/OptimalStrategy_DeucesWild.bin";
-    const DeucesWildOptimalStrategy = OptimalStrategyVectorized(DeucesWild);
-    const path = ".cache/OptimalStrategyVectorized_DeucesWild.bin";
-    var strategy = blk: {
-        const file_result = std.fs.cwd().openFile(path, .{ .mode = .read_only });
+    const DeucesWildFrequency = DealFrequency(DeucesWild, .vector);
+    var deal_frequency: DeucesWildFrequency = blk: {
+        const file_result = std.fs.cwd().openFile(DeucesWildFrequency.path, .{ .mode = .read_only });
         if (file_result) |file| {
             defer file.close();
             break :blk try measure_time(
                 "strategy deserialize",
-                DeucesWildOptimalStrategy.deserialize,
-                .{file.reader(), allocator, DeucesWildFullPay}
+                DeucesWildFrequency.deserialize,
+                .{allocator, file.reader()}
             );
         } else |_| {
             break :blk try measure_time(
                 "strategy init",
-                DeucesWildOptimalStrategy.init,
-                .{allocator, DeucesWildFullPay},
+                DeucesWildFrequency.init,
+                .{allocator},
             );
         }
     };
-    defer strategy.deinit();
+    defer deal_frequency.deinit();
+
+    const strategy = OptimalStrategy(DeucesWildFrequency).init(deal_frequency, DeucesWildFullPay);
 
     // const frequencies = measure_time("Compute strategy:", strategies.compute, .{strategy});
     const frequencies = measure_time("Compute strategy:", strategies.compute_weighted_rank, .{strategy});
@@ -54,7 +53,7 @@ fn run() !void {
         for (frequencies) |f| { x += @intCast(f); }
         break :blk x;
     };
-    const N = DeucesWildOptimalStrategy.Deck.N;
+    const N = DeucesWildFrequency.HandRank.Deck.len;
     const ev: f64 = blk: {
         var result: f64 = 0.0;
         const total_f64 = @as(f64, @floatFromInt(total));
@@ -72,9 +71,9 @@ fn run() !void {
     };
     std.debug.print("\nEV: {d:.6}\n", .{ev});
 
-    const file = try std.fs.cwd().createFile(path, .{});
+    const file = try std.fs.cwd().createFile(DeucesWildFrequency.path, .{});
     defer file.close();
-    try strategy.serialize(file.writer());
+    try deal_frequency.serialize(file.writer());
 }
 
 pub fn main() !void {

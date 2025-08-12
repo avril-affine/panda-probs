@@ -7,12 +7,12 @@ const choose_lookup = combinations.choose_lookup;
 const CombinationIterator = combinations.CombinationIterator;
 
 pub const StandardDeck = struct {
-    cards: [N]Card,
+    cards: [len]Card,
 
-    pub const N = 52;
-    const indices: [N]u6 = blk: {
-        var result: [N]u6 = undefined;
-        for (0..N) |i| { result[i] = @as(u6, @intCast(i)); }
+    pub const len = 52;
+    const indices: [len]u6 = blk: {
+        var result: [len]u6 = undefined;
+        for (0..len) |i| { result[i] = @as(u6, @intCast(i)); }
         break :blk result;
     };
 
@@ -71,7 +71,7 @@ pub const StandardDeck = struct {
         };
 
         pub fn init(i: u6) Card {
-            assert(i < StandardDeck.N);
+            assert(i < StandardDeck.len);
             return .{
                 .rank = @enumFromInt(i / 4),
                 .suit = @enumFromInt(i % 4),
@@ -88,8 +88,8 @@ pub const StandardDeck = struct {
     };
 
     pub fn init() StandardDeck {
-        var cards: [StandardDeck.N]Card = undefined;
-        for (0..StandardDeck.N) |index| {
+        var cards: [StandardDeck.len]Card = undefined;
+        for (0..StandardDeck.len) |index| {
             cards[index] = Card.init(@intCast(index));
         }
         return .{.cards = cards};
@@ -105,7 +105,7 @@ pub const StandardDeck = struct {
 
         var k: u8 = @intCast(hand.len);
         var prev_card_idx = @ctz(bit_mask);
-        var result = choose_lookup(StandardDeck.N, k) - choose_lookup(StandardDeck.N-prev_card_idx, k);
+        var result = choose_lookup(StandardDeck.len, k) - choose_lookup(StandardDeck.len-prev_card_idx, k);
         bit_mask &= bit_mask - 1;  // remove least significant bit
         k -= 1;
         while (bit_mask != 0) : ({
@@ -113,8 +113,8 @@ pub const StandardDeck = struct {
             k -= 1;
         }) {
             const card_idx = @ctz(bit_mask);
-            const n_1 = StandardDeck.N - 1 - prev_card_idx;
-            const n_2 = StandardDeck.N - card_idx;
+            const n_1 = StandardDeck.len - 1 - prev_card_idx;
+            const n_2 = StandardDeck.len - card_idx;
             result += choose_lookup(n_1, k) - choose_lookup(n_2, k);
             prev_card_idx = card_idx;
         }

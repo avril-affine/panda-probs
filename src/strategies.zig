@@ -10,15 +10,15 @@ const CombinationIterator = combinations.CombinationIterator;
 pub fn compute(
     /// an instance from the strategies/ dir
     strategy: anytype,
-) [@TypeOf(strategy).num_payouts]u64 {
+) [@TypeOf(strategy).P]u64 {
     const StrategyType = @TypeOf(strategy);
-    const PayoutFrequency = StrategyType.PayoutFrequency;
+    const RankFrequency = StrategyType.RankFrequency;
 
-    var indices: [StrategyType.Deck.N]u6 = undefined;
-    for (0..StrategyType.Deck.N) |i| { indices[i] = @intCast(i); }
+    var indices: [StrategyType.Deck.len]u6 = undefined;
+    for (0..StrategyType.Deck.len) |i| { indices[i] = @intCast(i); }
 
     var i: usize = 0;
-    var total_frequency = PayoutFrequency.init();
+    var total_frequency = RankFrequency.init();
     var hand_indices_iter = CombinationIterator(u6, 5).init(&indices);
     while (hand_indices_iter.next()) |hand_indices| {
         const frequency = strategy.draw_frequency(hand_indices);
@@ -133,15 +133,15 @@ const suits_and_weight_five_singletons = .{
 pub fn compute_weighted_rank(
     /// an instance from the strategies/ dir
     strategy: anytype,
-) [@TypeOf(strategy).num_payouts]u64 {
+) [@TypeOf(strategy).RankFrequency.len]u64 {
     assert(@TypeOf(strategy).Deck == StandardDeck);
 
     const StrategyType = @TypeOf(strategy);
-    const PayoutFrequency = StrategyType.PayoutFrequency;
+    const RankFrequency = StrategyType.RankFrequency;
     const Card = StandardDeck.Card;
     const Rank = Card.Rank;
 
-    var total_frequency = PayoutFrequency.init();
+    var total_frequency = RankFrequency.init();
 
     // four of a kind
     for (0..13) |r1_idx| {
