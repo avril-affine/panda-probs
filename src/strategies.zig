@@ -6,11 +6,21 @@ const StandardDeck = @import("decks/standard.zig").StandardDeck;
 const assert = std.debug.assert;
 const CombinationIterator = combinations.CombinationIterator;
 
-/// computes total frequency by iterating over all hands
 pub fn compute(
+    kind: enum { all_hands, weighted_rank },
+    strategy: anytype,
+) [@TypeOf(strategy).RankFrequency.len]u64 {
+    return switch (kind) {
+        .all_hands     => compute_all_hands(strategy),
+        .weighted_rank => compute_weighted_rank(strategy),
+    };
+}
+
+/// computes total frequency by iterating over all hands
+fn compute_all_hands(
     /// an instance from the strategies/ dir
     strategy: anytype,
-) [@TypeOf(strategy).P]u64 {
+) [@TypeOf(strategy).RankFrequency.len]u64 {
     const StrategyType = @TypeOf(strategy);
     const RankFrequency = StrategyType.RankFrequency;
 
@@ -130,7 +140,7 @@ const suits_and_weight_five_singletons = .{
 };
 
 /// computes total frequency by iterating over classes of hands, ignoring suits
-pub fn compute_weighted_rank(
+fn compute_weighted_rank(
     /// an instance from the strategies/ dir
     strategy: anytype,
 ) [@TypeOf(strategy).RankFrequency.len]u64 {
