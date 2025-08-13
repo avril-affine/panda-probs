@@ -27,7 +27,7 @@ pub fn OptimalStrategy(
 ) type {
 
     const HandRank = DealFrequency.HandRank;
-        const P = @typeInfo(HandRank).@"enum".fields.len;
+    const P = @typeInfo(HandRank).@"enum".fields.len;
     return struct {
         const Self = @This();
         pub const RankFrequency = DealFrequency.RankFrequency;
