@@ -7,10 +7,7 @@ const RankFrequencyVector = @import("rank_vector.zig").RankFrequencyVector;
 
 pub fn DealFrequency(
     comptime hand_rank_type: type,
-    comptime rank_frequency_type: enum {
-        array,
-        vector,
-    },
+    comptime rank_frequency_type: enum { array, vector },
 ) type {
     const Deck = hand_rank_type.Deck;
     const DEAL_CHOOSE_5 = combinations.choose(Deck.len, 5);
@@ -46,8 +43,7 @@ pub fn DealFrequency(
             const hand3_to_rank_freq = try RankFrequency.allocate_array(allocator, DEAL_CHOOSE_3);
             const hand2_to_rank_freq = try RankFrequency.allocate_array(allocator, DEAL_CHOOSE_2);
             const hand1_to_rank_freq = try RankFrequency.allocate_array(allocator, DEAL_CHOOSE_1);
-            const hand0_to_rank_freq = try allocator.create(RankFrequency);
-            hand0_to_rank_freq.data = @splat(0);
+            const hand0_to_rank_freq: *RankFrequency = @ptrCast(try RankFrequency.allocate_array(allocator, 1));
 
             const deck = Deck.init();
             var hand_iter = deck.hand_iter();
