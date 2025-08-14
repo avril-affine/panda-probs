@@ -4,10 +4,10 @@ run:
 	zig build run
 
 run-safe:
-	zig build run -- -DreleaseSafe
+	zig build run -Doptimize=ReleaseSafe
 
 run-fast:
-	zig build run -- -DreleaseFast
+	zig build run -Doptimize=ReleaseFast
 
 test:
 	zig build test
