@@ -7,12 +7,17 @@ const assert = std.debug.assert;
 const CombinationIterator = combinations.CombinationIterator;
 
 pub fn compute(
-    kind: enum { all_hands, weighted_rank },
+    kind: union(enum) {
+        all_hands,
+        weighted_rank,
+        weighted_rank_threaded,
+    },
     strategy: anytype,
 ) [@TypeOf(strategy).RankFrequency.len]u64 {
     return switch (kind) {
-        .all_hands     => compute_all_hands(strategy),
-        .weighted_rank => compute_weighted_rank(strategy),
+        .all_hands              => compute_all_hands(strategy),
+        .weighted_rank          => compute_weighted_rank(strategy),
+        .weighted_rank_threaded => compute_weighted_rank_threaded(strategy),
     };
 }
 
@@ -28,116 +33,29 @@ fn compute_all_hands(
     for (0..StrategyType.Deck.len) |i| { indices[i] = @intCast(i); }
 
     var i: usize = 0;
-    var total_frequency = RankFrequency.init();
+    var accumulator = RankFrequency.init();
     var hand_indices_iter = CombinationIterator(u6, 5).init(&indices);
     while (hand_indices_iter.next()) |hand_indices| {
         const frequency = strategy.draw_frequency(hand_indices);
-        total_frequency.add(&frequency);
+        accumulator.add(&frequency);
         if (i % 10_000 == 0) std.debug.print("\rComputing frequencies: {}", .{i});
         i += 1;
     }
-    return @bitCast(total_frequency.data);
+    return accumulator.data;
 }
 
-const suits_and_weight_four_of_a_kind = .{
-    .{ 0, 1, 2, 3, 0, 4 },
+pub const WeightedRankStandardHand = packed struct {
+    weight: u64,
+    card1: u6,
+    card2: u6,
+    card3: u6,
+    card4: u6,
+    card5: u6,
 };
-const suits_and_weight_full_house = .{
-    .{ 0, 1, 0, 1, 2, 12 },
-    .{ 0, 3, 0, 1, 2, 12 },
-};
-const suits_and_weight_three_of_a_kind = .{
-    .{ 0, 1, 2, 0, 1, 24 },
-    .{ 0, 1, 2, 0, 3, 12 },
-    .{ 0, 1, 2, 3, 0, 12 },
-    .{ 0, 1, 2, 0, 0, 12 },
-    .{ 0, 1, 2, 3, 3, 4 },
-};
-const suits_and_weight_two_pair = .{
-    .{ 0, 1, 2, 3, 0, 12 },
-    .{ 0, 1, 2, 3, 2, 12 },
-    .{ 0, 1, 0, 2, 0, 24 },
-    .{ 0, 1, 0, 2, 1, 24 },
-    .{ 0, 1, 0, 2, 2, 24 },
-    .{ 0, 1, 0, 2, 3, 24 },
-    .{ 0, 1, 0, 1, 0, 12 },
-    .{ 0, 1, 0, 1, 2, 12 },
-};
-const suits_and_weight_pair = .{
-    .{ 0, 1, 0, 0, 0, 12 },
-    .{ 0, 1, 0, 0, 1, 12 },
-    .{ 0, 1, 0, 1, 0, 12 },
-    .{ 0, 1, 1, 0, 0, 12 },
-    .{ 0, 1, 0, 0, 2, 24 },
-    .{ 0, 1, 0, 2, 0, 24 },
-    .{ 0, 1, 2, 0, 0, 24 },
-    .{ 0, 1, 0, 2, 2, 24 },
-    .{ 0, 1, 2, 0, 2, 24 },
-    .{ 0, 1, 2, 2, 0, 24 },
-    .{ 0, 1, 2, 2, 2, 12 },
-    .{ 0, 1, 0, 1, 2, 24 },
-    .{ 0, 1, 0, 2, 1, 24 },
-    .{ 0, 1, 2, 0, 1, 24 },
-    .{ 0, 1, 2, 3, 3, 12 },
-    .{ 0, 1, 3, 2, 3, 12 },
-    .{ 0, 1, 3, 3, 2, 12 },
-    .{ 0, 1, 0, 2, 3, 24 },
-    .{ 0, 1, 2, 0, 3, 24 },
-    .{ 0, 1, 2, 3, 0, 24 },
-};
-const suits_and_weight_five_singletons = .{
-    .{ 0, 0, 0, 0, 0, 4 },
-    .{ 1, 0, 0, 0, 0, 12 },
-    .{ 0, 1, 0, 0, 0, 12 },
-    .{ 0, 0, 1, 0, 0, 12 },
-    .{ 0, 0, 0, 1, 0, 12 },
-    .{ 0, 0, 0, 0, 1, 12 },
-    .{ 1, 1, 0, 0, 0, 12 },
-    .{ 1, 0, 1, 0, 0, 12 },
-    .{ 1, 0, 0, 1, 0, 12 },
-    .{ 1, 0, 0, 0, 1, 12 },
-    .{ 0, 1, 1, 0, 0, 12 },
-    .{ 0, 1, 0, 1, 0, 12 },
-    .{ 0, 1, 0, 0, 1, 12 },
-    .{ 0, 0, 1, 1, 0, 12 },
-    .{ 0, 0, 1, 0, 1, 12 },
-    .{ 0, 0, 0, 1, 1, 12 },
-    .{ 1, 2, 0, 0, 0, 24 },
-    .{ 1, 0, 2, 0, 0, 24 },
-    .{ 1, 0, 0, 2, 0, 24 },
-    .{ 1, 0, 0, 0, 2, 24 },
-    .{ 0, 1, 2, 0, 0, 24 },
-    .{ 0, 1, 0, 2, 0, 24 },
-    .{ 0, 1, 0, 0, 2, 24 },
-    .{ 0, 0, 1, 2, 0, 24 },
-    .{ 0, 0, 1, 0, 2, 24 },
-    .{ 0, 0, 0, 1, 2, 24 },
-    .{ 0, 0, 1, 1, 2, 24 },
-    .{ 0, 1, 0, 1, 2, 24 },
-    .{ 0, 1, 1, 0, 2, 24 },
-    .{ 0, 0, 1, 2, 1, 24 },
-    .{ 0, 1, 0, 2, 1, 24 },
-    .{ 0, 1, 1, 2, 0, 24 },
-    .{ 0, 0, 2, 1, 1, 24 },
-    .{ 0, 1, 2, 0, 1, 24 },
-    .{ 0, 1, 2, 1, 0, 24 },
-    .{ 0, 2, 0, 1, 1, 24 },
-    .{ 0, 2, 1, 0, 1, 24 },
-    .{ 0, 2, 1, 1, 0, 24 },
-    .{ 2, 0, 0, 1, 1, 24 },
-    .{ 2, 0, 1, 0, 1, 24 },
-    .{ 2, 0, 1, 1, 0, 24 },
-    .{ 3, 3, 0, 1, 2, 24 },
-    .{ 3, 0, 3, 1, 2, 24 },
-    .{ 3, 1, 2, 3, 0, 24 },
-    .{ 3, 0, 1, 2, 3, 24 },
-    .{ 0, 3, 3, 1, 2, 24 },
-    .{ 0, 3, 1, 3, 2, 24 },
-    .{ 0, 3, 1, 2, 3, 24 },
-    .{ 1, 2, 3, 3, 0, 24 },
-    .{ 1, 2, 3, 0, 3, 24 },
-    .{ 0, 1, 2, 3, 3, 24 },
-};
+
+const WEIGHTED_RANK_LEN = 134_459;
+const weighted_rank_standard_hands_bytes = @embedFile("precompute");
+const weighted_rank_standard_hands: *[WEIGHTED_RANK_LEN]WeightedRankStandardHand = @constCast(@ptrCast(@alignCast(weighted_rank_standard_hands_bytes)));
 
 /// computes total frequency by iterating over classes of hands, ignoring suits
 fn compute_weighted_rank(
@@ -146,166 +64,78 @@ fn compute_weighted_rank(
 ) [@TypeOf(strategy).RankFrequency.len]u64 {
     assert(@TypeOf(strategy).Deck == StandardDeck);
 
-    const StrategyType = @TypeOf(strategy);
-    const RankFrequency = StrategyType.RankFrequency;
-    const Card = StandardDeck.Card;
-    const Rank = Card.Rank;
+    const RankFrequency = @TypeOf(strategy).RankFrequency;
+    var accumulator = RankFrequency.init();
 
-    var total_frequency = RankFrequency.init();
+    for (weighted_rank_standard_hands) |weighted_rank_hand| {
+        var frequency = strategy.draw_frequency(.{
+            weighted_rank_hand.card1,
+            weighted_rank_hand.card2,                               
+            weighted_rank_hand.card3,
+            weighted_rank_hand.card4,
+            weighted_rank_hand.card5,
+        });
+        frequency.mul(weighted_rank_hand.weight);
+        accumulator.add(&frequency);
+    }
 
-    // four of a kind
-    for (0..13) |r1_idx| {
-        for (0..13) |r2_idx| {
-            if (r1_idx == r2_idx) continue;
-            const r1: Rank = @enumFromInt(r1_idx);
-            const r2: Rank = @enumFromInt(r2_idx);
+    return accumulator.data;
+}
 
-            inline for (suits_and_weight_four_of_a_kind) |suits_and_weight| {
-                const s1, const s2, const s3, const s4, const s5, const weight = suits_and_weight;
-                var frequency = strategy.draw_frequency(.{
-                    Card.index(.{ .rank = r1, .suit = @enumFromInt(s1) }),
-                    Card.index(.{ .rank = r1, .suit = @enumFromInt(s2) }),
-                    Card.index(.{ .rank = r1, .suit = @enumFromInt(s3) }),
-                    Card.index(.{ .rank = r1, .suit = @enumFromInt(s4) }),
-                    Card.index(.{ .rank = r2, .suit = @enumFromInt(s5) }),
+/// threaded version of compute_weighted_rank
+fn compute_weighted_rank_threaded(
+    /// an instance from the strategies/ dir
+    strategy: anytype,
+) [@TypeOf(strategy).RankFrequency.len]u64 {
+    assert(@TypeOf(strategy).Deck == StandardDeck);
+
+    const cpu_count = 16;
+    const RankFrequency = @TypeOf(strategy).RankFrequency;
+
+    const Worker = struct {
+        strategy   : *const @TypeOf(strategy),
+        accumulator: RankFrequency,
+        indices    : []usize,
+        thread     : usize,
+
+        fn run(self: *@This()) void {
+            for (self.indices) |i| {
+                const weighted_rank_hand = weighted_rank_standard_hands[i];
+                var frequency = self.strategy.draw_frequency(.{
+                    weighted_rank_hand.card1,
+                    weighted_rank_hand.card2,
+                    weighted_rank_hand.card3,
+                    weighted_rank_hand.card4,
+                    weighted_rank_hand.card5,
                 });
-                frequency.mul(weight);
-                total_frequency.add(&frequency);
-            }
-
-        }
-    }
-
-    // full house
-    for (0..13) |r1_idx| {
-        for (0..13) |r2_idx| {
-            if (r1_idx == r2_idx) continue;
-            const r1: Rank = @enumFromInt(r1_idx);
-            const r2: Rank = @enumFromInt(r2_idx);
-
-            inline for (suits_and_weight_full_house) |suits_and_weight| {
-                const s1, const s2, const s3, const s4, const s5, const weight = suits_and_weight;
-                var frequency = strategy.draw_frequency(.{
-                    Card.index(.{ .rank = r1, .suit = @enumFromInt(s1) }),
-                    Card.index(.{ .rank = r1, .suit = @enumFromInt(s2) }),
-                    Card.index(.{ .rank = r2, .suit = @enumFromInt(s3) }),
-                    Card.index(.{ .rank = r2, .suit = @enumFromInt(s4) }),
-                    Card.index(.{ .rank = r2, .suit = @enumFromInt(s5) }),
-                });
-                frequency.mul(weight);
-                total_frequency.add(&frequency);
+                frequency.mul(weighted_rank_hand.weight);
+                self.accumulator.add(&frequency);
             }
         }
+    };
+
+    var threads: [cpu_count]std.Thread = undefined;
+    var workers: [cpu_count]Worker = undefined;
+    var all_indices: [WEIGHTED_RANK_LEN]usize = undefined;
+    for (0..WEIGHTED_RANK_LEN) |i| { all_indices[i] = i; }
+    for (0..cpu_count) |i| {
+        const start_idx = WEIGHTED_RANK_LEN * i / cpu_count;
+        const end_idx   = WEIGHTED_RANK_LEN * (i+1) / cpu_count;
+        workers[i] = Worker{
+            .strategy    = &strategy,
+            .accumulator = RankFrequency.init(),
+            .indices     = all_indices[start_idx..end_idx],
+            .thread      = i,
+        };
+        threads[i] = std.Thread.spawn(.{}, Worker.run, .{&workers[i]})
+            catch @panic("couldn't spawn thread");
     }
 
-    // three of a kind
-    for (0..13) |r1_idx| {
-        for (0..12) |r2_idx| {
-            for (r2_idx+1..13) |r3_idx| {
-                if (r1_idx == r2_idx or r1_idx == r3_idx) continue;
-                const r1: Rank = @enumFromInt(r1_idx);
-                const r2: Rank = @enumFromInt(r2_idx);
-                const r3: Rank = @enumFromInt(r3_idx);
-
-                inline for (suits_and_weight_three_of_a_kind) |suits_and_weight| {
-                    const s1, const s2, const s3, const s4, const s5, const weight = suits_and_weight;
-                    var frequency = strategy.draw_frequency(.{
-                        Card.index(.{ .rank = r1, .suit = @enumFromInt(s1) }),
-                        Card.index(.{ .rank = r1, .suit = @enumFromInt(s2) }),
-                        Card.index(.{ .rank = r1, .suit = @enumFromInt(s3) }),
-                        Card.index(.{ .rank = r2, .suit = @enumFromInt(s4) }),
-                        Card.index(.{ .rank = r3, .suit = @enumFromInt(s5) }),
-                    });
-                    frequency.mul(weight);
-                    total_frequency.add(&frequency);
-                }
-            }
-        }
+    var accumulator = RankFrequency.init();
+    for (0..cpu_count) |i| {
+        threads[i].join();
+        accumulator.add(&workers[i].accumulator);
     }
 
-    // two pair
-    for (0..12) |r1_idx| {
-        for (r1_idx+1..13) |r2_idx| {
-            for (0..13) |r3_idx| {
-                if (r3_idx == r1_idx or r3_idx == r2_idx) continue;
-                const r1: Rank = @enumFromInt(r1_idx);
-                const r2: Rank = @enumFromInt(r2_idx);
-                const r3: Rank = @enumFromInt(r3_idx);
-
-                inline for (suits_and_weight_two_pair) |suits_and_weight| {
-                    const s1, const s2, const s3, const s4, const s5, const weight = suits_and_weight;
-                    var frequency = strategy.draw_frequency(.{
-                        Card.index(.{ .rank = r1, .suit = @enumFromInt(s1) }),
-                        Card.index(.{ .rank = r1, .suit = @enumFromInt(s2) }),
-                        Card.index(.{ .rank = r2, .suit = @enumFromInt(s3) }),
-                        Card.index(.{ .rank = r2, .suit = @enumFromInt(s4) }),
-                        Card.index(.{ .rank = r3, .suit = @enumFromInt(s5) }),
-                    });
-                    frequency.mul(weight);
-                    total_frequency.add(&frequency);
-                }
-            }
-        }
-
-    }
-
-    // pair
-    for (0..13) |r1_idx| {
-        for (0..11) |r2_idx| {
-            for (r2_idx+1..12) |r3_idx| {
-                for (r3_idx+1..13) |r4_idx| {
-                    if (r1_idx == r2_idx or r1_idx == r3_idx or r1_idx == r4_idx) continue;
-                    const r1: Rank = @enumFromInt(r1_idx);
-                    const r2: Rank = @enumFromInt(r2_idx);
-                    const r3: Rank = @enumFromInt(r3_idx);
-                    const r4: Rank = @enumFromInt(r4_idx);
-
-                    inline for (suits_and_weight_pair) |suits_and_weight| {
-                        const s1, const s2, const s3, const s4, const s5, const weight = suits_and_weight;
-                        var frequency = strategy.draw_frequency(.{
-                            Card.index(.{ .rank = r1, .suit = @enumFromInt(s1) }),
-                            Card.index(.{ .rank = r1, .suit = @enumFromInt(s2) }),
-                            Card.index(.{ .rank = r2, .suit = @enumFromInt(s3) }),
-                            Card.index(.{ .rank = r3, .suit = @enumFromInt(s4) }),
-                            Card.index(.{ .rank = r4, .suit = @enumFromInt(s5) }),
-                        });
-                        frequency.mul(weight);
-                        total_frequency.add(&frequency);
-                    }
-                }
-            }
-        }
-    }
-
-    // five singletons
-    for (0..9) |r1_idx| {
-        for (r1_idx+1..10) |r2_idx| {
-            for (r2_idx+1..11) |r3_idx| {
-                for (r3_idx+1..12) |r4_idx| {
-                    for (r4_idx+1..13) |r5_idx| {
-                        const r1: Rank = @enumFromInt(r1_idx);
-                        const r2: Rank = @enumFromInt(r2_idx);
-                        const r3: Rank = @enumFromInt(r3_idx);
-                        const r4: Rank = @enumFromInt(r4_idx);
-                        const r5: Rank = @enumFromInt(r5_idx);
-
-                        inline for (suits_and_weight_five_singletons) |suits_and_weight| {
-                            const s1, const s2, const s3, const s4, const s5, const weight = suits_and_weight;
-                            var frequency = strategy.draw_frequency(.{
-                                Card.index(.{ .rank = r1, .suit = @enumFromInt(s1) }),
-                                Card.index(.{ .rank = r2, .suit = @enumFromInt(s2) }),
-                                Card.index(.{ .rank = r3, .suit = @enumFromInt(s3) }),
-                                Card.index(.{ .rank = r4, .suit = @enumFromInt(s4) }),
-                                Card.index(.{ .rank = r5, .suit = @enumFromInt(s5) }),
-                            });
-                            frequency.mul(weight);
-                            total_frequency.add(&frequency);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return @bitCast(total_frequency.data);
+    return accumulator.data;
 }

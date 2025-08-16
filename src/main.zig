@@ -46,7 +46,11 @@ fn run() !void {
 
     const strategy = OptimalStrategy(DeucesWildFrequency).init(deal_frequency, DeucesWildFullPay);
 
-    const frequencies = measure_time("Compute strategy:", strategies.compute, .{.weighted_rank, strategy});
+    const frequencies = measure_time(
+        "Compute strategy:",
+        strategies.compute,
+        .{.weighted_rank_threaded, strategy},
+    );
     const total: u64 = blk: {
         var x: u64 = 0;
         for (frequencies) |f| { x += @intCast(f); }

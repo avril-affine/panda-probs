@@ -16,7 +16,7 @@ $$\binom{52}{5} \times 32 \times \binom{47}{5} \approx 1.3 \times 10^{14}$$
 
 ## Performance
 
-This app uses optimizations inspired by [Wizard of Odds’ methodology](https://wizardofodds.com/games/video-poker/methodology/) to drastically reduce the search space and can run in about **2 seconds**.
+This app uses optimizations inspired by [Wizard of Odds’ methodology](https://wizardofodds.com/games/video-poker/methodology/) to reduce the search space and runs in **<1 second** on a Macbook Pro M1.
 
 ## Usage
 
