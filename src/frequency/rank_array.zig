@@ -49,4 +49,3 @@ pub fn RankFrequencyArray(N: usize) type {
         }
     };
 }
-

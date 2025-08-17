@@ -43,4 +43,3 @@ pub fn RankFrequencyVector(N: usize) type {
         }
     };
 }
-

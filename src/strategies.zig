@@ -6,12 +6,14 @@ const StandardDeck = @import("decks/standard.zig").StandardDeck;
 const assert = std.debug.assert;
 const CombinationIterator = combinations.CombinationIterator;
 
+pub const ComputeType = enum {
+    all_hands,
+    weighted_rank,
+    weighted_rank_threaded,
+};
+
 pub fn compute(
-    kind: union(enum) {
-        all_hands,
-        weighted_rank,
-        weighted_rank_threaded,
-    },
+    kind: ComputeType,
     strategy: anytype,
 ) [@TypeOf(strategy).RankFrequency.len]u64 {
     return switch (kind) {

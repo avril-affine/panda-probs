@@ -219,14 +219,15 @@ pub fn OptimalStrategy(
 
 test "OptimalStrategy DeucesWild" {
     const DealFrequency = @import("../frequency/deal.zig").DealFrequency;
+    const RankFrequencyArray = @import("../frequency/rank_array.zig").RankFrequencyArray;
     const DeucesWild = @import("../poker_types/deuces_wild.zig").DeucesWild;
-    const DeucesWildFullPay = @import("../poker_types/deuces_wild.zig").DeucesWildFullPay;
+    const DeucesWildFullPay = [_]u64{0, 1, 2, 2, 3, 5, 9, 15, 25, 200, 800};
     const Card = DeucesWild.Card;
 
     try combinations.init(std.testing.allocator);
     defer combinations.deinit();
 
-    const DeucesWildDealFrequncy = DealFrequency(DeucesWild, .array);
+    const DeucesWildDealFrequncy = DealFrequency(DeucesWild, RankFrequencyArray(11));
     const DeucesWildOptimalStrategy = OptimalStrategy(DeucesWildDealFrequncy);
     var deal_frequency = try DeucesWildDealFrequncy.init(std.testing.allocator);
     defer deal_frequency.deinit();

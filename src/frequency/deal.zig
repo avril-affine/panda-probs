@@ -6,10 +6,10 @@ const RankFrequencyArray = @import("rank_array.zig").RankFrequencyArray;
 const RankFrequencyVector = @import("rank_vector.zig").RankFrequencyVector;
 
 pub fn DealFrequency(
-    comptime hand_rank_type: type,
-    comptime rank_frequency_type: enum { array, vector },
+    comptime HandRankType: type,
+    comptime RankFrequencyType: type,
 ) type {
-    const Deck = hand_rank_type.Deck;
+    const Deck = HandRankType.Deck;
     const DEAL_CHOOSE_5 = combinations.choose(Deck.len, 5);
     const DEAL_CHOOSE_4 = combinations.choose(Deck.len, 4);
     const DEAL_CHOOSE_3 = combinations.choose(Deck.len, 3);
@@ -18,15 +18,8 @@ pub fn DealFrequency(
 
     return struct {
         const Self = @This();
-        pub const RankFrequency = switch (rank_frequency_type) {
-            .array  => RankFrequencyArray(@typeInfo(HandRank).@"enum".fields.len),
-            .vector => RankFrequencyVector(@typeInfo(HandRank).@"enum".fields.len),
-        };
-        pub const HandRank = hand_rank_type;
-        pub const path = switch (rank_frequency_type) {
-            .array  => ".cache/DeucesWild_RankFrequencyArray.bin",
-            .vector => ".cache/DeucesWild_RankFrequencyVector.bin",
-        };
+        pub const RankFrequency = RankFrequencyType;
+        pub const HandRank = HandRankType;
 
         hand5_to_rank_index: *const [DEAL_CHOOSE_5]usize,
         hand4_to_rank_freq: *const [DEAL_CHOOSE_4]RankFrequency,
