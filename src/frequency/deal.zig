@@ -5,7 +5,7 @@ const CombinationIterator = combinations.CombinationIterator;
 const RankFrequencyArray = @import("rank_array.zig").RankFrequencyArray;
 const RankFrequencyVector = @import("rank_vector.zig").RankFrequencyVector;
 
-pub fn DealFrequency(
+pub fn DealFrequencyType(
     comptime HandRankType: type,
     comptime RankFrequencyType: type,
 ) type {

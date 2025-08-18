@@ -2,11 +2,11 @@ const std = @import("std");
 
 const combinations   = @import("combinations.zig");
 const strategies     = @import("strategies.zig");
-const deuces_wild    = @import("poker_types/deuces_wild.zig");
 
 const ComputeType         = strategies.ComputeType;
-const DeucesWild          = deuces_wild.DeucesWild;
-const DealFrequency       = @import("frequency/deal.zig").DealFrequency;
+const JacksOrBetter       = @import("poker_types/jacks_or_better.zig").JacksOrBetter;
+const DeucesWild          = @import("poker_types/deuces_wild.zig").DeucesWild;
+const DealFrequencyType   = @import("frequency/deal.zig").DealFrequencyType;
 // const RankFrequencyArray  = @import("frequency/rank_array.zig").RankFrequencyArray;
 const RankFrequencyVector = @import("frequency/rank_vector.zig").RankFrequencyVector;
 const OptimalStrategy     = @import("strategies/optimal.zig").OptimalStrategy;
@@ -20,6 +20,9 @@ fn measure_time(msg: []const u8, f: anytype, args: anytype) @TypeOf(@call(.auto,
     return result;
 }
 
+const PokerType = JacksOrBetter;
+const default_pay_table = "paytables/jacks_or_better.json";
+
 const Config = struct {
     paytable_path: []const u8,
     compute_type: ComputeType,
@@ -27,14 +30,14 @@ const Config = struct {
 
 fn parse_args(args_iter: *std.process.ArgIterator) !Config {
     _ = args_iter.next();
-    var paytable_path: []const u8 = "paytables/deuces_wild_full_pay.json";
+    var paytable_path: []const u8 = default_pay_table;
     var compute_type: ComputeType = ComputeType.weighted_rank_threaded;
     while (args_iter.next()) |arg| {
         if (std.mem.eql(u8, arg, "--compute")) {
             const val = args_iter.next() orelse return error.InvalidCompute;
             compute_type = std.meta.stringToEnum(ComputeType, val) orelse return error.InvalidCompute;
-        } else if (std.mem.eql(u8, arg, "--compute")) {
-            paytable_path = args_iter.next() orelse return error.InvalidCompute;
+        } else if (std.mem.eql(u8, arg, "--paytable")) {
+            paytable_path = args_iter.next() orelse return error.InvalidPaytable;
         } else {
             return error.UnknownArg;
         }
@@ -55,43 +58,44 @@ fn run() !void {
     defer args_iter.deinit();
     const config = try parse_args(&args_iter);
 
-    const PokerType = DeucesWild;
     const paytable_len = @typeInfo(PokerType).@"enum".fields.len;
 
     const paytable: [paytable_len]u64 = blk: {
-        const file = try std.fs.cwd().openFile(config.paytable_path, .{});
+        const file = std.fs.cwd().openFile(config.paytable_path, .{})
+            catch return error.InvalidPaytablePath;
         defer file.close();
 
         const json_buf = try allocator.alloc(u8, try file.getEndPos());
         _ = try file.readAll(json_buf);
 
-        const json_array = try std.json.parseFromSlice([paytable_len]u64, allocator, json_buf, .{});
+        const json_array = std.json.parseFromSlice([paytable_len]u64, allocator, json_buf, .{})
+            catch return error.InvalidPaytable;
         break :blk json_array.value;
     };
 
-    const DeucesWildFrequency = DealFrequency(DeucesWild, RankFrequencyVector(paytable_len));
+    const DealFrequency = DealFrequencyType(PokerType, RankFrequencyVector(paytable_len));
     var path_buf: [256]u8 = undefined;
     const path = try std.fmt.bufPrint(&path_buf, ".cache/{s}.bin", .{@typeName(PokerType)});
-    var deal_frequency: DeucesWildFrequency = blk: {
+    var deal_frequency: DealFrequency = blk: {
         const file_result = std.fs.cwd().openFile(path, .{ .mode = .read_only });
         if (file_result) |file| {
             defer file.close();
             break :blk try measure_time(
                 "strategy deserialize",
-                DeucesWildFrequency.deserialize,
+                DealFrequency.deserialize,
                 .{allocator, file.reader()}
             );
         } else |_| {
             break :blk try measure_time(
                 "strategy init",
-                DeucesWildFrequency.init,
+                DealFrequency.init,
                 .{allocator},
             );
         }
     };
     defer deal_frequency.deinit();
 
-    const strategy = OptimalStrategy(DeucesWildFrequency).init(deal_frequency, paytable);
+    const strategy = OptimalStrategy(DealFrequency).init(deal_frequency, paytable);
 
     const frequencies = measure_time(
         "Compute strategy:",
@@ -103,7 +107,7 @@ fn run() !void {
         for (frequencies) |f| { x += @intCast(f); }
         break :blk x;
     };
-    const N = DeucesWildFrequency.HandRank.Deck.len;
+    const N = DealFrequency.HandRank.Deck.len;
     const ev: f64 = blk: {
         var result: f64 = 0.0;
         const total_f64 = @as(f64, @floatFromInt(total));
